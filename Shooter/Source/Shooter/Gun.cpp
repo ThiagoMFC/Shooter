@@ -56,14 +56,26 @@ void AGun::PullTrigger() {
 
 	FVector End = Location + Rotation.Vector() * MaxRange;
 
-	
+	UGameplayStatics::SpawnEmitterAttached(MuzzleFlash, Mesh, TEXT("MuzzleFlashSocket"));
 
 	FHitResult Hit;
 	bool bSuccess = GetWorld()->LineTraceSingleByChannel(Hit, Location, End, ECollisionChannel::ECC_GameTraceChannel1);
 	if (bSuccess) {
-		DrawDebugPoint(GetWorld(), Hit.Location, 20, FColor::Red, true);
+		FVector ShotDirection = -Rotation.Vector();
+		//DrawDebugPoint(GetWorld(), Hit.Location, 20, FColor::Red, true);
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, Hit.Location, ShotDirection.Rotation());
+
+		
+		AActor* HitActor = Hit.GetActor();
+
+		if (HitActor){
+			//UE_LOG(LogTemp, Warning, TEXT("Hit"));
+			FPointDamageEvent DamageEvent(Damage, Hit, ShotDirection, nullptr);
+			HitActor->TakeDamage(Damage, DamageEvent, OwnerController, this);
+		}
+		
 	}
 
-	UGameplayStatics::SpawnEmitterAttached(MuzzleFlash, Mesh, TEXT("MuzzleFlashSocket"));
+	
 }
 
