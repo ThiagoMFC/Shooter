@@ -28,6 +28,9 @@ public:
 	UFUNCTION(BlueprintPure)
 		bool IsDead() const;
 
+	void Shoot();
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -38,7 +41,7 @@ private:
 	void MoveRight(float AxisValue);
 	void LookUp(float AxisValue);
 	void LookRight(float AxisValue);
-	void Shoot();
+	
 
 	//controller specific
 	void LookUpRate(float AxisValue);

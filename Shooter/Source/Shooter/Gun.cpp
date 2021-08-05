@@ -36,41 +36,65 @@ void AGun::Tick(float DeltaTime)
 
 }
 
-void AGun::PullTrigger() {
-	UE_LOG(LogTemp, Warning, TEXT("shoot"));
-
+AController* AGun::GetOwnerController() const {
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (!OwnerPawn) {
-		return;
+		return nullptr;
 	}
 
-	AController* OwnerController = OwnerPawn->GetController();
+	return OwnerPawn->GetController();
+	
+}
+
+bool AGun::GunTrace(FHitResult &Hit, FVector &ShotDirection) {
+	
+	AController* OwnerController = GetOwnerController();
 	if (!OwnerController) {
-		return;
+		return false;
 	}
-
 
 	FVector Location;
 	FRotator Rotation;
 	OwnerController->GetPlayerViewPoint(Location, Rotation);
 
+	ShotDirection = -Rotation.Vector();
+
 	FVector End = Location + Rotation.Vector() * MaxRange;
 
-	UGameplayStatics::SpawnEmitterAttached(MuzzleFlash, Mesh, TEXT("MuzzleFlashSocket"));
+	
+	FCollisionQueryParams Params;
 
+	Params.AddIgnoredActor(this);
+	Params.AddIgnoredActor(GetOwner());
+
+	return GetWorld()->LineTraceSingleByChannel(Hit, Location, End, ECollisionChannel::ECC_GameTraceChannel1, Params);
+}
+
+void AGun::PullTrigger() {
+	//UE_LOG(LogTemp, Warning, TEXT("shoot"));
+	UGameplayStatics::SpawnEmitterAttached(MuzzleFlash, Mesh, TEXT("MuzzleFlashSocket"));
+	UGameplayStatics::SpawnSoundAttached(MuzzleSound, Mesh, TEXT("MuzzleFlashSocket"));
 	FHitResult Hit;
-	bool bSuccess = GetWorld()->LineTraceSingleByChannel(Hit, Location, End, ECollisionChannel::ECC_GameTraceChannel1);
+	FVector ShotDirection;
+	bool bSuccess = GunTrace(Hit, ShotDirection);
+
+	
+
 	if (bSuccess) {
-		FVector ShotDirection = -Rotation.Vector();
+		
 		//DrawDebugPoint(GetWorld(), Hit.Location, 20, FColor::Red, true);
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, Hit.Location, ShotDirection.Rotation());
-
+		UGameplayStatics::SpawnSoundAtLocation(GetWorld(), ImpactSound, Hit.Location, ShotDirection.Rotation());
 		
 		AActor* HitActor = Hit.GetActor();
 
 		if (HitActor){
 			//UE_LOG(LogTemp, Warning, TEXT("Hit"));
 			FPointDamageEvent DamageEvent(Damage, Hit, ShotDirection, nullptr);
+			AController* OwnerController = GetOwnerController();
+			if (!OwnerController) {
+				return;
+			}
 			HitActor->TakeDamage(Damage, DamageEvent, OwnerController, this);
 		}
 		

@@ -16,13 +16,20 @@ class SHOOTER_API AShooterAIController : public AAIController
 
 public:
 	virtual void Tick(float DeltaTime) override;
+	bool IsDead() const;
 
 protected:
 	virtual void BeginPlay() override;
 
 private:
 
+	//UPROPERTY(EditAnywhere)
+	//	float AccepetanceRadius = 200.f;
+
 	UPROPERTY(EditAnywhere)
-		float AccpetanceRadius = 200.f;
+	class UBehaviorTree* AIBehavior;
+
+	FVector StartLocation;
+	FVector PlayerLastKnownLocation;
 	
 };
